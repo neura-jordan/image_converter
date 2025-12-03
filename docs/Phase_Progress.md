@@ -39,16 +39,16 @@ This document tracks the progress of the project. As the CTO, I have broken down
 
 ## Phase 5: Advanced JPEG Encoding (Quality Control)
 **Goal**: Implement variable quality settings to support both high-fidelity screenshots and compressed previews.
-- [ ] **Task 5.1**: Implement mathematical scaling of quantization tables based on a quality factor (1-100).
-- [ ] **Task 5.2**: Update CLI to accept a `-q / --quality` argument.
-- [ ] **Task 5.3**: Verify output quality improvements on screenshots.
+- [x] **Task 5.1**: Implement mathematical scaling of quantization tables based on a quality factor (1-100).
+- [x] **Task 5.2**: Update CLI to accept a `-q / --quality` argument.
+- [x] **Task 5.3**: Verify output quality improvements on screenshots.
 
 ## Phase 6: Bidirectional Conversion (JPG -> PNG)
 **Goal**: Transform the tool into a full two-way converter.
-- [ ] **Task 6.1**: Implement `JpegDecoder` class.
-    - [ ] Parse JPEG markers (SOI, SOF0, DHT, DQT, SOS).
-    - [ ] Implement Huffman Decoding.
-    - [ ] Implement Inverse DCT (IDCT).
-    - [ ] Implement YCbCr to RGB conversion.
-- [ ] **Task 6.2**: Integrate `JpegDecoder` into `main.cpp`.
-- [ ] **Task 6.3**: Update CLI to auto-detect input format and determine conversion direction.
+- [x] **Task 6.1**: Implement `JpegDecoder` class.
+    - [x] Parse JPEG markers (SOI, SOF0, DHT, DQT, SOS).
+    - [x] Implement Huffman Decoding.
+    - [x] Implement Inverse DCT (IDCT).
+    - [x] Implement YCbCr to RGB conversion.
+- [x] **Task 6.2**: Integrate `JpegDecoder` into `main.cpp`.
+- [x] **Task 6.3**: Update CLI to auto-detect input format and determine conversion direction.
