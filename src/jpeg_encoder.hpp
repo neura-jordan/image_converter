@@ -9,7 +9,8 @@
 
 class JpegEncoder {
 public:
-  static void encode(const Image &img, const std::string &filepath);
+  static void encode(const Image &img, const std::string &filepath,
+                     int quality = 50);
 
 private:
   struct HuffmanTable {
@@ -23,7 +24,9 @@ private:
   };
 
   static void initTables();
-  static void writeHeaders(BitWriter &writer, int width, int height);
+  static void writeHeaders(BitWriter &writer, int width, int height,
+                           const uint8_t *lumaTable,
+                           const uint8_t *chromaTable);
   static void writeFooter(BitWriter &writer);
   static void processBlock(BitWriter &writer, const float *blockData,
                            const uint8_t *quantTable, int &prevDC,

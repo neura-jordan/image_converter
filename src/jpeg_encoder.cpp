@@ -18,11 +18,12 @@ const uint8_t JpegEncoder::QUANT_CHROMA[64] = {
     99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99, 99};
 
 // ZigZag order
+// ZigZag order
 const uint8_t JpegEncoder::ZIGZAG[64] = {
-    0,  1,  5,  6,  14, 15, 27, 28, 2,  4,  7,  13, 16, 26, 29, 42,
-    3,  8,  12, 17, 25, 30, 41, 43, 9,  11, 18, 24, 31, 40, 44, 53,
-    10, 19, 23, 32, 39, 45, 52, 54, 20, 22, 33, 38, 46, 51, 55, 60,
-    21, 34, 37, 47, 50, 56, 59, 61, 35, 36, 48, 49, 57, 58, 62, 63};
+    0,  1,  8,  16, 9,  2,  3,  10, 17, 24, 32, 25, 18, 11, 4,  5,
+    12, 19, 26, 33, 40, 48, 41, 34, 27, 20, 13, 6,  7,  14, 21, 28,
+    35, 42, 49, 56, 57, 50, 43, 36, 29, 22, 15, 23, 30, 37, 44, 51,
+    58, 59, 52, 45, 38, 31, 39, 46, 53, 60, 61, 54, 47, 55, 62, 63};
 
 JpegEncoder::HuffmanTable JpegEncoder::DC_LUMA;
 JpegEncoder::HuffmanTable JpegEncoder::AC_LUMA;
@@ -115,11 +116,43 @@ void JpegEncoder::initTables() {
   tablesInitialized = true;
 }
 
-void JpegEncoder::encode(const Image &img, const std::string &filepath) {
+void JpegEncoder::encode(const Image &img, const std::string &filepath,
+                         int quality) {
   initTables();
   BitWriter writer;
 
-  writeHeaders(writer, img.width, img.height);
+  // Quality scaling
+  if (quality < 1)
+    quality = 1;
+  if (quality > 100)
+    quality = 100;
+
+  int scale;
+  if (quality < 50) {
+    scale = 5000 / quality;
+  } else {
+    scale = 200 - 2 * quality;
+  }
+
+  auto generateQuantTable = [&](const uint8_t *baseTable, uint8_t *outTable) {
+    for (int i = 0; i < 64; ++i) {
+      long temp = (long)baseTable[i] * scale + 50;
+      temp /= 100;
+      if (temp < 1)
+        temp = 1;
+      if (temp > 255)
+        temp = 255;
+      outTable[i] = (uint8_t)temp;
+    }
+  };
+
+  uint8_t scaledLuma[64];
+  uint8_t scaledChroma[64];
+
+  generateQuantTable(QUANT_LUMA, scaledLuma);
+  generateQuantTable(QUANT_CHROMA, scaledChroma);
+
+  writeHeaders(writer, img.width, img.height, scaledLuma, scaledChroma);
 
   int prevDC_Y = 0;
   int prevDC_Cb = 0;
@@ -156,12 +189,12 @@ void JpegEncoder::encode(const Image &img, const std::string &filepath) {
       }
 
       // Process Y
-      processBlock(writer, blockY, QUANT_LUMA, prevDC_Y, DC_LUMA, AC_LUMA);
+      processBlock(writer, blockY, scaledLuma, prevDC_Y, DC_LUMA, AC_LUMA);
       // Process Cb
-      processBlock(writer, blockCb, QUANT_CHROMA, prevDC_Cb, DC_CHROMA,
+      processBlock(writer, blockCb, scaledChroma, prevDC_Cb, DC_CHROMA,
                    AC_CHROMA);
       // Process Cr
-      processBlock(writer, blockCr, QUANT_CHROMA, prevDC_Cr, DC_CHROMA,
+      processBlock(writer, blockCr, scaledChroma, prevDC_Cr, DC_CHROMA,
                    AC_CHROMA);
     }
   }
@@ -173,7 +206,9 @@ void JpegEncoder::encode(const Image &img, const std::string &filepath) {
   outFile.write(reinterpret_cast<const char *>(data.data()), data.size());
 }
 
-void JpegEncoder::writeHeaders(BitWriter &writer, int width, int height) {
+void JpegEncoder::writeHeaders(BitWriter &writer, int width, int height,
+                               const uint8_t *lumaTable,
+                               const uint8_t *chromaTable) {
   // SOI
   writer.writeMarker(0xD8);
 
@@ -196,12 +231,12 @@ void JpegEncoder::writeHeaders(BitWriter &writer, int width, int height) {
   // Luma Table (ID 0)
   writer.writeBits(0x00, 8); // Precision 0, ID 0
   for (int i = 0; i < 64; ++i)
-    writer.writeBits(QUANT_LUMA[ZIGZAG[i]], 8);
+    writer.writeBits(lumaTable[ZIGZAG[i]], 8);
 
   // Chroma Table (ID 1)
   writer.writeBits(0x01, 8); // Precision 0, ID 1
   for (int i = 0; i < 64; ++i)
-    writer.writeBits(QUANT_CHROMA[ZIGZAG[i]], 8);
+    writer.writeBits(chromaTable[ZIGZAG[i]], 8);
 
   // SOF0 (Start of Frame)
   writer.writeMarker(0xC0);
