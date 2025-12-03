@@ -1,0 +1,12 @@
+# Build artifacts
+build/
+converter
+*.o
+
+# Generated test files
+test.png
+output.jpg
+tests/test_gen
+
+# System files
+.DS_Store
