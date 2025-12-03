@@ -25,13 +25,26 @@ make
 
 ## Usage
 
+### Basic Conversion
+Automatically detects direction based on file extensions.
+
 ```bash
-./converter <input.png> <output.jpg>
+# Convert PNG to JPG
+./converter input.png output.jpg
+
+# Convert JPG to PNG
+./converter input.jpg output.png
 ```
 
-Example:
+### Quality Control (PNG to JPG)
+Specify the quality of the output JPEG (1-100). Default is 50.
+
 ```bash
-./converter image.png result.jpg
+# High quality (larger file)
+./converter input.png output.jpg -q 90
+
+# Low quality (smaller file)
+./converter input.png output.jpg --quality 10
 ```
 
 ## Testing
@@ -39,6 +52,8 @@ Example:
 To run the end-to-end verification test:
 
 ```bash
-# Generate a test PNG and convert it
-make && ./tests/test_gen && ./converter test.png output.jpg
+# Generate a test PNG and perform round-trip conversion
+make && ./tests/test_gen
+./converter test.png test.jpg
+./converter test.jpg test_restored.png
 ```
